@@ -1,0 +1,20 @@
+trigger LastOppClosed on Opportunity (after update, after insert) {
+    if(trigger.isafter) {
+        set<id> accountIdsSet = new set<id>();
+        for(Opportunity Opp : trigger.new) {  
+            accountIdsSet.add(Opp.AccountId);
+        }
+        List<Account> updateAccountList = new List<Account>();
+        list<account> accList = new  list<account>();
+        accList = [SELECT Id, Opportunity_CloseDate__c, (select id, closedate from Opportunities ORDER BY closedate DESC limit 1) FROM account where Id IN: accountIdsSet];
+        if(accList.size()>0 && !accList.isempty()){
+            for(account acc : accList) {  
+                for(opportunity a : acc.opportunities) {
+                    acc.Opportunity_CloseDate__c = a.closedate;          
+                    updateAccountList.add(acc);
+                }
+            }   
+            update updateAccountList;
+        }
+    }
+}
